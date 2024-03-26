@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	         http://www.springframework.org/schema/beans/spring-beans.xsd
+		 http://www.springframework.org/schema/context
+		 http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+    <bean id="company" class="org.springframework.test.beans.dependency.autowire.Company" autowire="byName">
+        <property name="name" value="${companyName}"/>
+        <property name="department" ref="department"/>
+    </bean>
+    <bean id="department" class="org.springframework.test.beans.dependency.autowire.Department">
+        <property name="name" value="人力资源部"/>
+        <property name="code" value="10086"/>
+        <property name="employee" ref="employee"/>
+    </bean>
+    <bean id="employee" class="org.springframework.test.beans.dependency.autowire.Employee">
+        <property name="name" value="打工人"/>
+    </bean>
+
+    <!--导入PropertyPlaceholderConfigurer，支持${}占位符解析-->
+    <bean id="placeholderConfigurer"
+          class="org.springframework.beans.processor.beanfactory.PropertyPlaceholderConfigurer">
+        <property name="location" value="classpath:additional-config.properties"/>
+    </bean>
+
+</beans>
+
+
