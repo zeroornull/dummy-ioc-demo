@@ -1,6 +1,5 @@
 package org.springframework.test.beans.dependency;
 
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.DefaultListableBeanFactory;
@@ -21,8 +20,7 @@ import org.springframework.test.beans.dependency.autowire.Employee;
 import java.util.Map;
 
 /**
- * dummy-ioc实现了老式的autowire和最常用的@Autowired注解。暂不支持循环依赖，Spring也不推荐循环依赖。
- * 通过这个测试案例，你会了解到BeanFactory虽然强大，但各个组件之间配合起来却非常复杂。
+ * dummy-ioc实现了老式的autowire和最常用的@Autowired注解。暂不支持循环依赖，Spring也不推荐循环依赖。 通过这个测试案例，你会了解到BeanFactory虽然强大，但各个组件之间配合起来却非常复杂。
  * 为了降低BeanFactory的使用成本，以及提供更强大的功能（比如事件机制、国际化等），Spring引入了ApplicationContext的概念。
  */
 public class BeanDependencyInjectTest {
@@ -40,7 +38,9 @@ public class BeanDependencyInjectTest {
         reader.loadBeanDefinitions("classpath:3_autowire_mode.xml");
 
         // 注意！！如果把这个注释了，Company中的${companyName}就无法解析了
-        PropertyPlaceholderConfigurer placeholderConfigurer = beanFactory.getBean("placeholderConfigurer", PropertyPlaceholderConfigurer.class);
+
+        PropertyPlaceholderConfigurer placeholderConfigurer =
+            beanFactory.getBean("placeholderConfigurer", PropertyPlaceholderConfigurer.class);
         Assert.assertNotNull(placeholderConfigurer);
         placeholderConfigurer.postProcessBeanFactory(beanFactory);
 

@@ -1,6 +1,5 @@
 package org.springframework.test.context;
 
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.annotation.Autowired;
@@ -16,6 +15,12 @@ import org.springframework.context.event.listener.ApplicationListener;
 import org.springframework.core.exception.BeansException;
 import org.springframework.test.beans.dependency.BeanDependencyInjectTest;
 
+
+/**
+ * @author: xxp
+ * @date: 2024/3/27 5:30
+ * @description: TODO
+ **/
 public class ClassPathXmlApplicationContextTest {
 
     /**
@@ -50,6 +55,24 @@ public class ClassPathXmlApplicationContextTest {
         ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:6_application_event.xml");
         OrderService orderService = applicationContext.getBean("orderService", OrderService.class);
         orderService.cancelOrder("123456", "24681012141618");
+    }
+
+    @Component
+    public static class OrderMqHandler implements ApplicationListener<OrderCancelledEvent> {
+
+        @Override
+        public void onApplicationEvent(OrderCancelledEvent event) {
+            System.out.println("OrderMqHandler 监听到订单取消，orderNo：" + event.getSource());
+        }
+    }
+
+    @Component
+    public static class MyApplicationRefreshedEventListener implements ApplicationListener<ContextRefreshedEvent> {
+
+        @Override
+        public void onApplicationEvent(ContextRefreshedEvent event) {
+            System.out.println("监听到ApplicationContext刷新完毕");
+        }
     }
 
     @Component
@@ -93,19 +116,6 @@ public class ClassPathXmlApplicationContextTest {
         }
     }
 
-
-    /************* 容器事件监听 *************/
-
-    @Component
-    public static class MyApplicationRefreshedEventListener implements ApplicationListener<ContextRefreshedEvent> {
-
-        @Override
-        public void onApplicationEvent(ContextRefreshedEvent event) {
-            System.out.println("监听到ApplicationContext刷新完毕");
-        }
-    }
-
-
     /************* 自定义事件监听 *************/
 
     @Component
@@ -121,15 +131,6 @@ public class ClassPathXmlApplicationContextTest {
         @Override
         public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
             this.applicationContext = applicationContext;
-        }
-    }
-
-    @Component
-    public static class OrderMqHandler implements ApplicationListener<OrderCancelledEvent> {
-
-        @Override
-        public void onApplicationEvent(OrderCancelledEvent event) {
-            System.out.println("OrderMqHandler 监听到订单取消，orderNo：" + event.getSource());
         }
     }
 

@@ -37,12 +37,50 @@ public class PropertyPlaceholderConfigurer implements BeanFactoryPostProcessor {
 
         // 遍历BeanDefinition，将BeanDefinition.property中的${}占位符替换成实际值，比如 author=${author} 替换成 author=Rod Johnson
         processProperties(beanFactory, properties);
-
+        
         // 上面的功能牛逼吧？
         // 但当前方法仅在ApplicationContext#refresh时执行一次，后面想用也没法用了
         // 所以，Spring把整个解析逻辑封装到PlaceholderResolvingStringValueResolver（内部类），注册到BeanFactory中，后续想用就可以用
         StringValueResolver valueResolver = new PlaceholderResolvingStringValueResolver(properties);
         beanFactory.addEmbeddedValueResolver(valueResolver);
+    }
+
+    private void processProperties(DefaultListableBeanFactory beanFactory, Properties properties) {
+        String[] beanDefinitionNames = beanFactory.getBeanDefinitionNames();
+        for (String beanDefinitionName : beanDefinitionNames) {
+            BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanDefinitionName);
+            resolvePropertyValues(beanDefinition, properties);
+        }
+    }
+
+    private void resolvePropertyValues(BeanDefinition beanDefinition, Properties properties) {
+        PropertyValues propertyValues = beanDefinition.getPropertyValues();
+        for (PropertyValue propertyValue : propertyValues.getPropertyValues()) {
+            Object value = propertyValue.getValue();
+            if (value instanceof String) {
+                value = resolvePlaceholders((String)value, properties);
+                propertyValues.addPropertyValue(new PropertyValue(propertyValue.getName(), value));
+            }
+        }
+    }
+
+    /**
+     * 先解析属性值中的占位符：比如解析${author}得到author 再把author作为key，从properties配置中获取对应的值 最后返回真实的value
+     */
+    private Object resolvePlaceholders(String value, Properties properties) {
+        StringBuilder buf = new StringBuilder(value);
+        int startIndex = value.indexOf(PLACEHOLDER_PREFIX);
+        int endIndex = value.indexOf(PLACEHOLDER_SUFFIX);
+        if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+            String placeholder = value.substring(startIndex + PLACEHOLDER_PREFIX.length(), endIndex);
+            String propVal = properties.getProperty(placeholder);
+            buf.replace(startIndex, endIndex + PLACEHOLDER_SUFFIX.length(), propVal);
+        }
+        return buf.toString();
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     /**
@@ -61,24 +99,18 @@ public class PropertyPlaceholderConfigurer implements BeanFactoryPostProcessor {
     }
 
     /**
-     * 属性值替换占位符
+     * 将PropertyPlaceholderConfigurer.this.resolvePlaceholder的逻辑封装成一个StringValueResolver
      */
-    private void processProperties(DefaultListableBeanFactory beanFactory, Properties properties) throws BeansException {
-        String[] beanDefinitionNames = beanFactory.getBeanDefinitionNames();
-        for (String beanName : beanDefinitionNames) {
-            BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanName);
-            resolvePropertyValues(beanDefinition, properties);
-        }
-    }
+    private class PlaceholderResolvingStringValueResolver implements StringValueResolver {
 
-    private void resolvePropertyValues(BeanDefinition beanDefinition, Properties properties) {
-        PropertyValues propertyValues = beanDefinition.getPropertyValues();
-        for (PropertyValue propertyValue : propertyValues.getPropertyValues()) {
-            Object value = propertyValue.getValue();
-            if (value instanceof String) {
-                value = resolvePlaceholder((String) value, properties);
-                propertyValues.addPropertyValue(new PropertyValue(propertyValue.getName(), value));
-            }
+        private final Properties properties;
+
+        public PlaceholderResolvingStringValueResolver(Properties properties) {
+            this.properties = properties;
+        }
+
+        public String resolveStringValue(String strVal) throws BeansException {
+            return PropertyPlaceholderConfigurer.this.resolvePlaceholder(strVal, properties);
         }
     }
 
@@ -97,25 +129,5 @@ public class PropertyPlaceholderConfigurer implements BeanFactoryPostProcessor {
             buf.replace(startIndex, endIndex + 1, propVal);
         }
         return buf.toString();
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    /**
-     * 将PropertyPlaceholderConfigurer.this.resolvePlaceholder的逻辑封装成一个StringValueResolver
-     */
-    private class PlaceholderResolvingStringValueResolver implements StringValueResolver {
-
-        private final Properties properties;
-
-        public PlaceholderResolvingStringValueResolver(Properties properties) {
-            this.properties = properties;
-        }
-
-        public String resolveStringValue(String strVal) throws BeansException {
-            return PropertyPlaceholderConfigurer.this.resolvePlaceholder(strVal, properties);
-        }
     }
 }
